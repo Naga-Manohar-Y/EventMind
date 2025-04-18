@@ -1,0 +1,9 @@
+.env
+data/events.db
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.log
+.DS_Store
