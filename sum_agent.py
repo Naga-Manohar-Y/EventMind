@@ -5,6 +5,15 @@ import os
 import time
 from multiprocessing import Pool
 from crewai import Agent, Crew, Process, Task, LLM
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
 
 def update_event_summary(event_id, data):
     """Update event with summary, lead_score, and retry logic."""
@@ -52,9 +61,11 @@ def fetch_event_data(event_id):
             data['venue_name'] = result[4]
             data['category_name'] = result[5]
         else:
-            print(f"❌ No data found for event {event_id}")
+            logger.error(f"❌ No data found for event {event_id}")
+            # print(f"❌ No data found for event {event_id}")
     except sqlite3.Error as e:
-        print(f"❌ Failed to fetch data for {event_id}: {e}")
+        logger.error(f"❌ Failed to fetch data for {event_id}: {e}")
+        # print(f"❌ Failed to fetch data for {event_id}: {e}")
     finally:
         conn.close()
     return data
@@ -73,7 +84,8 @@ def summarize_event(event):
         # Fetch event data from database
         data = fetch_event_data(event_id)
         if not data:
-            print(f"❌ Skipping event {event_id}: No data")
+            logger.error(f"❌ Skipping event {event_id}: No data")
+            #print(f"❌ Skipping event {event_id}: No data")
             return event_id, False
 
         # CrewAI setup
@@ -152,6 +164,7 @@ def summarize_event(event):
         )
 
         time.sleep(1)  # Serper rate limit
+        logger.info(f"Kicking off CrewAI for event {event_id}")
         results = crew.kickoff()
 
         # Parse results safely
@@ -159,7 +172,8 @@ def summarize_event(event):
             summary_result = results.tasks_output[1].raw if len(results.tasks_output) > 1 else ''
             score_result = results.tasks_output[2].raw if len(results.tasks_output) > 2 else ''
         except (IndexError, AttributeError) as e:
-            print(f"❌ Failed to parse results for {event_id}: {e}")
+            logger.error(f"❌ Failed to parse results for {event_id}: {e}")
+            #print(f"❌ Failed to parse results for {event_id}: {e}")
             return event_id, False
 
         data['summary'] = summary_result.strip()
@@ -167,25 +181,30 @@ def summarize_event(event):
             score = int(score_result.strip())
             if 1 <= score <= 10:
                 data['lead_score'] = score
+                logger.info(f"Assigned lead score {score} for event {event_id}")
             else:
-                print(f"❌ Invalid score {score} for {event_id}, skipping")
+                logger.error(f"❌ Invalid score {score} for {event_id}, skipping")
+                # print(f"❌ Invalid score {score} for {event_id}, skipping")
                 data['lead_score'] = None
         except ValueError:
-            print(f"❌ Invalid score format '{score_result}' for {event_id}, skipping")
+            logger.error(f"❌ Invalid score format '{score_result}' for {event_id}, skipping")
+            # print(f"❌ Invalid score format '{score_result}' for {event_id}, skipping")
             data['lead_score'] = None
 
         # Update database
         update_event_summary(event_id, data)
-        print(f"✅ Stored summary and score for {event_id}")
+        # print(f"✅ Stored summary and score for {event_id}")
+        logger.info(f"✅ Stored summary and score for event {event_id}")
         return event_id, True
 
     except Exception as e:
-        print(f"❌ Failed event {event_id}: {e}")
+        logger.error(f"❌ Failed event {event_id}: {e}")
+        # print(f"❌ Failed event {event_id}: {e}")
         return event_id, False
 
 def run_summary_for_events():
     """Run summarization and scoring for all unsummarized events."""
-    
+    logger.info("Starting EventMind summarization pipeline...")
     
     conn = sqlite3.connect("data/events.db")
     c = conn.cursor()
@@ -194,17 +213,22 @@ def run_summary_for_events():
     conn.close()
 
     if not events:
-        print("📭 No events to summarize.")
+        # print("📭 No events to summarize.")
+        logger.info("📭 No events to summarize.")
         return
 
-    print(f"📦 Found {len(events)} events to summarize and score.")
+    # print(f"📦 Found {len(events)} events to summarize and score.")
+    logger.info(f"📦 Found {len(events)} events to summarize and score.")
 
     with Pool(processes=4) as pool:
         results = pool.map(summarize_event, events)
 
     for event_id, success in results:
         status = "✅ Completed" if success else "❌ Failed"
-        print(f"{status} event {event_id}")
+        # print(f"{status} event {event_id}")
+        logger.info(f"{status} event {event_id}")
+        
+    logger.info("EventMind summarization pipeline completed")
 
 if __name__ == "__main__":
     run_summary_for_events()

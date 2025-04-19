@@ -1,22 +1,23 @@
 # src/scraper/selenium_scraper.py
-
-# from selenium import webdriver
-# from selenium.webdriver.chrome.options import Options
-
-
-# def get_event_ids(city: str = "san-francisco", max_events: int = 50):
-#     options = Options()
-#     options.add_argument("--headless")
-#     options.add_argument("--disable-gpu")
-#     driver = webdriver.Chrome(options=options)
     
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 import re
 import time
+import logging
 
-def get_event_ids(city, max_events):
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+def get_event_ids(query_params):
+    
+    state = query_params.get("state").lower()
+    city = query_params.get("city").lower().replace(" ", "-")
+    category = query_params.get("category").lower()
+    max_events = query_params.get("max_events", 20)
+    
+    
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
@@ -28,11 +29,13 @@ def get_event_ids(city, max_events):
     event_ids = set()
     page = 1
 
-    print(f"🔍 Scraping Eventbrite events in {city}...")
+    #print(f"🔍 Scraping Eventbrite events in {city}...")
+    logger.info(f"🔍 Scraping Eventbrite events in {city}, {state} for {category}...")
 
     while len(event_ids) < max_events:
-        url = f"https://www.eventbrite.com/d/ca--{city}/tech-events/?page={page}"
-        print(f"🌐 Visiting page {page}: {url}")
+        url = f"https://www.eventbrite.com/d/{state}--{city}/{category}--events/?page={page}"
+        #print(f"🌐 Visiting page {page}: {url}")
+        logger.info(f"🌐 Visiting page {page}: {url}")
         driver.get(url)
         time.sleep(3)  # wait for events to load
 

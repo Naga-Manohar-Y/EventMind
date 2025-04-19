@@ -18,11 +18,10 @@ RUN pip install --no-cache-dir --upgrade pip
 # Copy project files
 COPY src/ src/
 COPY tests/ tests/
+COPY app.py .
 COPY run.py .
 COPY sum_agent.py .
-#COPY schema.sql .
 COPY requirements.txt .
-COPY .env .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -31,5 +30,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 
-# Command to run the pipeline
-CMD ["bash", "-c", "python run.py && python sum_agent.py"]
+# No CMD; Streamlit will be started via docker-compose.yml
