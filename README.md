@@ -4,7 +4,7 @@ EventMind is an automated pipeline that scrapes tech and professional events fro
 
 ## Architecture
 
-![Architecture](https://github.com/Naga-Manohar-Y/EventMind/tree/main/src/Architecture.jpeg)
+![Architecture](https://github.com/Naga-Manohar-Y/EventMind/blob/main/src/Architecture.jpeg)
 The pipeline uses a modular design:
 
 - **Scraper**: Collects events via Eventbrite API and Selenium (`src/scraper/`).
