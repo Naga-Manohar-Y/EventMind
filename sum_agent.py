@@ -91,16 +91,19 @@ def summarize_event(event):
         # CrewAI setup
         search_tool = SerperDevTool()
         llm = LLM(
-            model="nvidia_nim/meta/llama-3.1-8b-instruct",
+            model="nvidia_nim/meta/llama-3.2-3b-instruct",
             api_key=os.getenv("NVIDIA_NIM_API_KEY"),
-            temperature=0.7,
+            temperature=0.6,
             max_tokens=500
         )
-
+        
+    
         researcher = Agent(
             role="Event Researcher",
             goal="Gather event context from web using its URL",
-            backstory="Expert researcher at LINQ digging up event value through web searches.",
+            backstory="""You're a senior event intelligence analyst with years of experience researching professional and tech conferences.
+            You specialize in using advanced search techniques to uncover detailed information about event audiences, industries, and speaker intent.
+            You know how to dig deeper into event listings, uncovering the business potential behind each gathering.""",
             tools=[search_tool],
             verbose=False,
             llm=llm
@@ -109,7 +112,9 @@ def summarize_event(event):
         analyzer = Agent(
             role="Event Analyzer",
             goal="Summarize events for sales teams in 2-3 crisp lines",
-            backstory="Summarization expert skilled at turning dense info into sales insights.",
+            backstory="""You're a B2B content strategist with a sharp ability to condense complex event data into sales-focused summaries.
+            You've worked with sales enablement teams at SaaS companies and know exactly what makes an event valuable for outbound engagement.
+            You help sales teams quickly identify which events are worth pursuing by distilling value propositions clearly.""",
             verbose=False,
             llm=llm
         )
@@ -117,7 +122,10 @@ def summarize_event(event):
         lead_scorer = Agent(
             role="Lead Scoring Analyst",
             goal="Evaluate event potential for sales lead generation",
-            backstory="You're a sales strategist skilled at qualifying events for outbound campaigns.",
+            backstory="""You're a growth strategist specializing in B2B SaaS pipeline development. 
+            You've built lead scoring models used by SDR and GTM teams to prioritize outreach opportunities from events. 
+            Your strength is evaluating how well an event aligns with key buyer personas, company ICPs, and intent signals. 
+            You think like a sales leader who only wants to invest time in high-yield events.""",
             verbose=False,
             llm=llm
         )
